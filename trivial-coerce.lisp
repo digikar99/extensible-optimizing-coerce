@@ -121,6 +121,20 @@ is a single argument function that takes an object and checks if the coercion is
               *coercion-alist*))))
 
 (defun coerce (object output-type-spec)
+  "Converts OBJECT to type specified by OUTPUT-TYPE-SPEC. To do so, the system
+internally makes use of coercions (lambda functions) defined using DEFINE-COERCION.
+
+The applicable coercion is guaranteed to take an object of (super)type of OBJECT
+and return an object of (sub)type specified by OUTPUT-TYPE-SPEC. If multiple
+coercions are applicable, the specific coercion that is called is undefined.
+
+For instance, consider two coercions defined as:
+
+    (define-coercion (list :from list :to string) (write-to-string list))
+    (define-coercion (list :from list :to vector) (cl:coerce list 'vector))
+
+Then, the value of `(coerce '(1 2 3) 'vector)` is permitted to be `\"(1 2 3)\"`.
+One may use `(coerce '(1) '(and vector (not string)))` to obtain the expected."
   (declare (type tt::type-specifier output-type-spec))
   (if (typep object output-type-spec)
       object

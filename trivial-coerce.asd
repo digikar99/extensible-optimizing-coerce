@@ -4,6 +4,7 @@
   :depends-on ("introspect-environment"
                ;; fetch trivial-types from https://github.com/digikar99/trivial-types
                "trivial-types")
+  :version "0.0.1"
   :serial t
   :components ((:file "trivial-coerce")
                (:file "optim")

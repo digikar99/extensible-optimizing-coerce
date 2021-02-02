@@ -76,6 +76,9 @@
 (define-coercion (char :from character :to integer) (char-code char))
 (define-coercion (code :from integer :to character) (code-char code))
 
+(define-coercion (pathname :from pathname :to simple-string) (namestring pathname))
+(define-coercion (pathspec :from string   :to pathname) (pathname pathspec))
+
 ;; (macrolet ((def-signed-stub (type)
 ;;              `(define-coercion (num :from real :to ,type)
 ;;                 (mod)))))
