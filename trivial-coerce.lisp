@@ -183,7 +183,3 @@ If a TYPE= coercion is available, and
               (:error `(error "A coercion TYPE= from ~S to ~S already exists" ',from ',to))))
          (setf (coercion ',from ',to) ,coercion)
          t))))
-
-
-
-
