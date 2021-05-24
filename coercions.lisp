@@ -1,5 +1,7 @@
 (in-package :trivial-coerce)
 
+(define-coercion (object :from t :to t) object)
+
 (define-coercion (sequence :to list :from sequence) (cl:coerce sequence 'list))
 (define-coercion (sequence :to vector :from sequence) (cl:coerce sequence 'vector))
 
