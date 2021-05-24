@@ -14,86 +14,54 @@
 ;; TODO: Abstract this out either using COMPILER-MACRO system
 ;; or some other better system
 
-(defvar *form*)
-(defvar *env*)
-
-(setf (documentation '*form* 'variable) "Bound in COERCE's compiler-macro.")
-(setf (documentation '*env*  'variable) "Bound in COERCE's compiler-macro.")
-
-(define-condition coerce-optim-failure (condition)
-  ((header :initform (format nil "; Unable to optimize
-;   ~S
-; because~%"
-                             *form*)
-           :allocation :instance)))
-
-(define-condition no-coercion (coerce-optim-failure)
+(define-condition no-coercion (compiler-macro-notes:optimization-failure-note)
   ((from :initarg :from)
    (to   :initarg :to))
   (:report (lambda (condition stream)
-             (with-slots (header from to) condition
-               (format stream "~A;   no coercion found from ~S to ~S"
-                       header
+             (with-slots (from to) condition
+               (format stream "No coercion found from ~S to ~S"
                        from
                        to)))))
 
-(define-condition no-output-type-spec (coerce-optim-failure)
-  ((output-type-spec :initarg :output-type-spec))
+(define-condition potentially-invalid-output-type-spec
+    (compiler-macro-notes:optimization-failure-note)
+  ((output-type-spec-type :initarg :output-type-spec-type))
   (:report (lambda (condition stream)
-             (with-slots (header output-type-spec) condition
-               (format stream "~A;   unable to infer the value of ~S at compile time"
-                       header
-                       output-type-spec)))))
+             (with-slots (output-type-spec-type) condition
+               (format stream "Unable to infer OUTPUT-TYPE-SPEC from form derived to be of type ~S"
+                       output-type-spec-type)))))
 
-(define-condition no-object-type (coerce-optim-failure)
+(define-condition no-object-type (compiler-macro-notes:optimization-failure-note)
   ((object :initarg :object)
    (to     :initarg :to))
   (:report (lambda (condition stream)
-             (with-slots (header object to) condition
-               (format stream "~A;   unable to infer the type of ~S at compile time
-;   and no coercion known from T to ~S"
-                       header
+             (with-slots (object to) condition
+               (format stream "Unable to infer the type of ~S at compile time
+and no coercion known from T to ~S"
                        object
                        to)))))
 
-(defun form-type (form)
-  "Returns two values: the first value is the declared type
-if the second value is non-nil"
-  (cond ((constantp form)
-         (values (type-of (ie:constant-form-value form *env*))
-                 t))
-        ((symbolp form)
-         (values (ie:variable-type form *env*)
-                 (cdr (assoc 'type (nth-value 2 (ie:variable-information form *env*))))))
-        ((eq 'the (first form))
-         (values (second form)
-                 t))
-        (t
-         (values nil nil))))
-
 (define-compiler-macro coerce (&whole form object output-type-spec &environment env)
-  (when (< (ie:policy-quality 'speed env) 3)
-    (return-from coerce form))
-  (let ((*form* form)
-        (*env*  env))
-    (handler-case
-        (progn
-          (unless (constantp output-type-spec env)
-            (error 'no-output-type-spec :output-type-spec output-type-spec))
-          (setq output-type-spec (ie:constant-form-value output-type-spec))
-          (multiple-value-bind (t-coercion exact) (coercion t output-type-spec)
-            (when (and exact t-coercion)
-              (return-from coerce `(the ,output-type-spec (funcall ,t-coercion ,object))))
-            (multiple-value-bind (object-type type-known-p) (form-type object)
-              (cond ((and (not type-known-p) (not t-coercion))
-                     (error 'no-object-type :object object :to output-type-spec))
-                    ((and type-known-p (not t-coercion))
-                     (let ((coercion (coercion object-type output-type-spec)))
-                       (if coercion
-                           (return-from coerce
-                             `(the ,output-type-spec (,(coercion-fbody coercion)
-                                                      ,object)))
-                           (error 'no-coercion :to output-type-spec :from object-type))))))))
-      (coerce-optim-failure (c)
-        (format *error-output* "~&~A" c)
-        form))))
+  (compiler-macro-notes:with-notes
+      (form :optimization-note-condition (= 3 (ie:policy-quality 'speed env)))
+    (when (< (ie:policy-quality 'speed env) 3)
+      (return-from coerce form))
+    (let* ((object-type (cl-form-types:nth-form-type object env 0 t t))
+           (output-type-spec-type
+             (cl-form-types:nth-form-type output-type-spec env 0 t t))
+           (output-type-spec (if (and (listp output-type-spec-type)
+                                      (or (member (first output-type-spec-type)
+                                                  '(eql member))))
+                                 (second output-type-spec-type)
+                                 (signal 'potentially-invalid-output-type-spec
+                                         :output-type-spec-type output-type-spec-type))))
+      ;; FIXME: Does it matter if the COERCION is EXACT?
+      (multiple-value-bind (t-coercion exact) (coercion object-type output-type-spec)
+        (declare (ignore exact))
+        (cond (t-coercion
+               (return-from coerce `(the ,output-type-spec
+                                         (,(coercion-fbody t-coercion) ,object))))
+              ((eq t object-type)
+               (signal 'no-object-type :object object :to output-type-spec))
+              (t
+               (signal 'no-coercion :to output-type-spec :from object-type)))))))
