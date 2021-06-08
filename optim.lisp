@@ -43,7 +43,7 @@ and no coercion known from T to ~S"
 
 (define-compiler-macro coerce (&whole form object output-type-spec &environment env)
   (compiler-macro-notes:with-notes
-      (form :optimization-note-condition (= 3 (ie:policy-quality 'speed env)))
+      (form env :optimization-note-condition (= 3 (ie:policy-quality 'speed env)))
     (when (< (ie:policy-quality 'speed env) 3)
       (return-from coerce form))
     (let* ((object-type (cl-form-types:nth-form-type object env 0 t t))
