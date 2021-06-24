@@ -2,16 +2,15 @@
 (defsystem "trivial-coerce"
   :licence "MIT"
   :author "Shubhamkar Ayare (shubhamayare@yahoo.co.in)"
-  :description "`trivial-coerce` primarily provides a `trivial-coerce:coerce` function that is intended as an extensible alternative to `cl:coerce`."
-  :depends-on ("introspect-environment"
-               ;; fetch trivial-types from https://github.com/digikar99/trivial-types
+  :description "`trivial-coerce` primarily provides a `trivial-coerce:coerce` function intended as an extensible alternative to `cl:coerce`."
+  :depends-on (;; fetch trivial-types from https://github.com/digikar99/trivial-types
                "trivial-types"
-               "cl-form-types"
-               "compiler-macro-notes")
-  :version "0.0.1"
+               "polymorphic-functions"
+               "ctype")
+  :version "0.0.2"
   :serial t
-  :components ((:file "trivial-coerce")
-               (:file "optim")
+  :components ((:file "package")
+               (:file "trivial-coerce")
                (:file "coercions"))
   :in-order-to ((test-op (test-op "trivial-coerce/tests"))))
 
@@ -22,4 +21,4 @@
   :depends-on ("trivial-coerce"
                "fiveam")
   :components ((:file "tests"))
-  :perform (test-op (o c) (uiop:symbol-call :fiveam '#:run! :trivial-coerce)))
+  :perform (test-op (o c) (eval (read-from-string "(5AM:RUN! :TRIVIAL-COERCE)"))))

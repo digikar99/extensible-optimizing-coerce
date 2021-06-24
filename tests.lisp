@@ -52,7 +52,7 @@
   (is (string= "hello" (coerce "hello" 'string))))
 
 (def-test define-and-undefine ()
-  (with-output-to-string (*error-output*)
+  (handler-bind ((warning #'muffle-warning))
 
     (mapcar #'fmakunbound '(b1-p b2-p))
 
@@ -63,24 +63,26 @@
              (defstruct (b2 (:include b1)))))
 
     (eval `(define-coercion (obj :from a2 :to b2) (make-b2)))
-    (is (b2-p (coerce (make-a2) 'b2)))
-    (signals type-error (coerce (make-a1) 'b2))
+    (eval `(is (b2-p (coerce (make-a2) 'b2))))
+    (eval `(signals type-error (coerce (make-a1) 'b2)))
     (eval `(undefine-coercion 'a2 'b2))
 
     (eval `(define-coercion (obj :from a1 :to b2) (make-b2)))
-    (is (b2-p (coerce (make-a1) 'b2)))
-    (is (b2-p (coerce (make-a2) 'b2)))
-    (is (b2-p (coerce (make-a2) 'b1)))
-    (is (b2-p (coerce (make-a1) 'b1)))
+    (eval `(progn
+             (is (b2-p (coerce (make-a1) 'b2)))
+             (is (b2-p (coerce (make-a2) 'b2)))
+             (is (b2-p (coerce (make-a2) 'b1)))
+             (is (b2-p (coerce (make-a1) 'b1)))))
     (eval `(undefine-coercion 'a1 'b2))
 
     (eval `(define-coercion (obj :from a1 :to b1) (make-b1)))
     ;; No guarantees will be provided for conflicting cases; after all, both do return B2
     ;; (eval `(define-coercion (obj :from a2 :to b1) (make-b2)))
-    (is (b1-p (coerce (make-a1) 'b1)))
-    (is (b1-p (coerce (make-a2) 'b1)))
-    (signals type-error (coerce (make-a1) 'b2))
-    (signals type-error (coerce (make-a2) 'b2))
+    (eval `(progn
+             (is (b1-p (coerce (make-a1) 'b1)))
+             (is (b1-p (coerce (make-a2) 'b1)))
+             (signals type-error (coerce (make-a1) 'b2))
+             (signals type-error (coerce (make-a2) 'b2))))
     (eval `(undefine-coercion 'a1 'b1))
 
     (mapcar #'unintern '(a1 a2 b1 b2))

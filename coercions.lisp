@@ -6,8 +6,10 @@
 (define-coercion (sequence :to vector :from sequence) (cl:coerce sequence 'vector))
 
 (macrolet ((def-stub (type)
-             `(define-coercion (sequence :from sequence :to (vector ,type))
-                (cl:coerce sequence '(vector ,type)))))
+             (if (assoc type ctype::+floats+)
+                 `(define-coercion (sequence :from sequence :to (vector ,type))
+                    (cl:coerce sequence '(vector ,type)))
+                 nil)))
   (def-stub single-float)
   (def-stub double-float)
   (def-stub short-float)
@@ -33,7 +35,7 @@
              `(define-coercion (,type :to character
                                       :from ,type)
                 (cl:coerce ,type 'character))))
-  (def-stub symbol)
+  (def-stub trivial-types:character-designator)
   (def-stub character)
   (def-stub string))
 
@@ -44,16 +46,20 @@
 ;; (define-coercion (number :from real :to complex) (complex number))
 
 (macrolet ((def-stub (type)
-             `(define-coercion (number :from real :to (complex ,type))
-                (cl:coerce number '(complex ,type)))))
+             (if (assoc type ctype::+floats+)
+                 `(define-coercion (number :from real :to (complex ,type))
+                    (cl:coerce number '(complex ,type)))
+                 nil)))
   (def-stub double-float)
   (def-stub single-float)
   (def-stub short-float)
   (def-stub long-float))
 
 (macrolet ((def-stub (type)
-             `(define-coercion (number :from real :to ,type)
-                (cl:coerce number ',type))))
+             (if (assoc type ctype::+floats+)
+                 `(define-coercion (number :from real :to ,type)
+                    (cl:coerce number ',type))
+                 nil)))
   (def-stub double-float)
   (def-stub single-float)
   (def-stub short-float)
@@ -80,6 +86,15 @@
 
 (define-coercion (pathname :from pathname :to simple-string) (namestring pathname))
 (define-coercion (pathspec :from string   :to pathname) (pathname pathspec))
+
+(define-coercion (int :from integer :to (unsigned-byte 64))
+  (mod int #.(expt 2 64)))
+(define-coercion (int :from integer :to (unsigned-byte 32))
+  (mod int #.(expt 2 32)))
+(define-coercion (int :from integer :to (unsigned-byte 16))
+  (mod int #.(expt 2 16)))
+(define-coercion (int :from integer :to (unsigned-byte 08))
+  (mod int #.(expt 2 8)))
 
 ;; (macrolet ((def-signed-stub (type)
 ;;              `(define-coercion (num :from real :to ,type)

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Optimized for compile-time performance and notes: use `(optimize (speed 3))`
+- Re-implemented using [polymorphic-functions.extended-types](https://github.com/digikar99/polymorphic-functions/) use `(optimize (speed 3))` with (< debug 3) to compile-time optimize for inline static dispatch.
 - API is immature; wait for a few months or years until this library gets more thoroughly tested.
 
 I suspect that unless there are requests, I will not work on the following:
@@ -11,6 +11,11 @@ I suspect that unless there are requests, I will not work on the following:
 - Use hash-tables instead of alists: requires type preserving hash-functions
 
 >In case someone has a better idea for `trivial-coerce` - feel free to raise an issue, and in the worst case, if more than a handful think (or I get convinced) the other library better deserves the name, I'd be glad to rename this library to something else. (Therefore, use with package-local-nicknames.)
+
+Crucial dependencies:
+
+- [polymorphic-functions](https://github.com/digikar99/polymorphic-functions/)
+- [ctype](https://github.com/s-expressionists/ctype/)
 
 ## Why
 
@@ -45,22 +50,11 @@ I do not know of alternatives.
 ## Documentation
 
 The main function is `(trivial-coerce:coerce object output-type-spec)`:
-This converts OBJECT to type specified by OUTPUT-TYPE-SPEC. To do so, the system
-internally makes use of coercions (lambda functions) defined using DEFINE-COERCION.
+This converts OBJECT to type specified by OUTPUT-TYPE-SPEC.
 
 The applicable coercion is guaranteed to take an object of (super)type of OBJECT
 and return an object of (sub)type specified by OUTPUT-TYPE-SPEC. If multiple
-coercions are applicable, the specific coercion that is called is undefined.
-
-For instance, consider two coercions defined as:
-
-```lisp
-(define-coercion (list :from list :to string) (write-to-string list))
-(define-coercion (list :from list :to vector) (cl:coerce list 'vector))
-```
-
-Then, the value of `(coerce '(1 2 3) 'vector)` is permitted to be `\"(1 2 3)\"`.
-One may use `(coerce '(1) '(and vector (not string)))` to obtain the expected result.
+coercions are applicable, the most specific coercion is called. (See [Role of Extended Types](#role-of-extended-types).)
 
 ### Important functions and macros
 
@@ -80,20 +74,28 @@ TO-TYPE
 CL-USER> (defun to-type (a type)
            (declare (optimize speed))
            (coerce a type))
-; Unable to optimize
+; Compiler-macro of #<POLYMORPHIC-FUNCTION COERCE (28)> is unable to optimize
 ;   (COERCE A TYPE)
-; because
-;   unable to infer the value of TYPE at compile time
+; because:
+;
+;   Type of
+;     TYPE
+;   could not be determined
+;   Type of
+;     A
+;   could not be determined
 WARNING: redefining COMMON-LISP-USER::TO-TYPE in DEFUN
 TO-TYPE
 CL-USER> (defun to-string (a)
            (declare (optimize speed))
            (coerce a 'string))
-; Unable to optimize
+; Compiler-macro of #<POLYMORPHIC-FUNCTION COERCE (28)> is unable to optimize
 ;   (COERCE A 'STRING)
-; because
-;   unable to infer the type of A at compile time
-;   and no coercion known from T to STRING
+; because:
+;
+;   Type of
+;     A
+;   could not be determined
 WARNING: redefining COMMON-LISP-USER::TO-STRING in DEFUN
 TO-STRING
 CL-USER> (defun to-string (a)
@@ -104,17 +106,27 @@ WARNING: redefining COMMON-LISP-USER::TO-STRING in DEFUN
 TO-STRING
 CL-USER> (disassemble 'to-string)
 ; disassembly for TO-STRING
-; Size: 31 bytes. Origin: #x52D68A34                          ; TO-STRING
-; 34:       4883EC10         SUB RSP, 16
-; 38:       B902000000       MOV ECX, 2
-; 3D:       48892C24         MOV [RSP], RBP
-; 41:       488BEC           MOV RBP, RSP
-; 44:       B862523750       MOV EAX, #x50375262              ; #<FDEFN SB-INT:STRINGIFY-OBJECT>
-; 49:       FFD0             CALL RAX
-; 4B:       488BE5           MOV RSP, RBP
-; 4E:       F8               CLC
-; 4F:       5D               POP RBP
-; 50:       C3               RET
-; 51:       CC10             INT3 16                          ; Invalid argument count trap
+; Size: 17 bytes. Origin: #x5374A224                          ; TO-STRING
+; 24:       B902000000       MOV ECX, 2
+; 29:       FF7508           PUSH QWORD PTR [RBP+8]
+; 2C:       B8C2333650       MOV EAX, #x503633C2              ; #<FDEFN SB-INT:STRINGIFY-OBJECT>
+; 31:       FFE0             JMP RAX
+; 33:       CC10             INT3 16                          ; Invalid argument count trap
 NIL
 ```
+
+### Role of Extended Types
+
+The form `(define-coercion (sequence :to list :from sequence) (cl:coerce sequence 'list))` macroexpands to:
+
+```lisp
+(defpolymorph coerce
+    ((sequence sequence) (#:output-type-spec2636 (supertypep list)))
+    list
+  (declare (ignorable sequence #:output-type-spec2636))
+  (common-lisp:coerce sequence 'list))
+```
+
+Thus, we use the extended type `(supertypep list)` to denote all the type specifiers that are a supertype of `list`. Thus `(typep 'sequence (supertypep list))` and `(typep t '(supertypep list))` holds (using `polymorphic-functions.extended-types:typep`).
+
+Amongst these, consider `(supertypep string)` and `(supertypep vector)` - and note that the latter is a subset (and hence a subtype) of the former. In other words, the polymorph corresponding to the latter is a more specialized polymorph than the former. And thus, this most specialized polymorph is chosen accordingly.
