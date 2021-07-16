@@ -87,14 +87,23 @@
 (define-coercion (pathname :from pathname :to simple-string) (namestring pathname))
 (define-coercion (pathspec :from string   :to pathname) (pathname pathspec))
 
-(define-coercion (int :from integer :to (unsigned-byte 64))
-  (mod int #.(expt 2 64)))
-(define-coercion (int :from integer :to (unsigned-byte 32))
-  (mod int #.(expt 2 32)))
-(define-coercion (int :from integer :to (unsigned-byte 16))
-  (mod int #.(expt 2 16)))
-(define-coercion (int :from integer :to (unsigned-byte 08))
-  (mod int #.(expt 2 8)))
+(macrolet ((def (bits)
+             `(progn
+                (define-coercion (int :from integer :to (unsigned-byte ,bits))
+                  (mod int ,(expt 2 bits)))
+                (define-coercion (int :from integer :to (signed-byte ,bits))
+                  (let ((ub (mod int ,(expt 2 bits))))
+                    (if (< ub ,(expt 2 (1- bits)))
+                        ub
+                        (- ub
+                           ,(expt 2 bits))))))))
+  (def 64)
+  (def 32)
+  (def 16)
+  (def 08)
+  (def 04)
+  (def 02)
+  (def 01))
 
 ;; (macrolet ((def-signed-stub (type)
 ;;              `(define-coercion (num :from real :to ,type)
