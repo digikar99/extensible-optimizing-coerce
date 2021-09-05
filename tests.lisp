@@ -41,9 +41,10 @@
   (def-stub to-long-float long-float))
 
 (def-test to-function ()
+  ;; http://clhs.lisp.se/Body/f_coerce.htm
   (is (eq (fdefinition 'coerce) (coerce 'coerce 'function)))
   (is (functionp (coerce '(lambda ()) 'function)))
-  (signals type-error (coerce '(progn (lambda ())) 'function)))
+  (signals error (coerce '(progn (lambda ())) 'function)))
 
 (def-test to-string ()
   (is (string= "A" (coerce 'a 'string)))
