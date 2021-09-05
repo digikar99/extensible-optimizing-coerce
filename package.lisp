@@ -10,8 +10,6 @@
    #:typep
    #:type=)
   (:shadow #:coerce)
-  (:local-nicknames (:tt :trivial-types)
-                    (:ie :introspect-environment))
   (:export
    #:coerce
    #:define-coercion

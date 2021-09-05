@@ -73,7 +73,7 @@
 ;; Beyond CLHS =================================================================
 
 (define-coercion (string-designator :to string
-                                    :from tt:string-designator)
+                                    :from trivial-types:string-designator)
   (string string-designator))
 (define-coercion (number :from number :to simple-string)
   (write-to-string number))
