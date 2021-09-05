@@ -1,14 +1,13 @@
 (in-package :trivial-coerce)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun coerce-error (name arg-list &optional env)
+  (defun coerce-error (name env args &optional arg-types)
     ;; This is a commentary from the time when COERCE was for non-extended types:
     ;; Should we use CTYPE here? Naah, just let users use this as a DROP-IN replacement
     ;; without having to think twice.
-    (declare (ignorable name arg-list))
-    (destructuring-bind (object output-type-spec) arg-list
+    (destructuring-bind (object output-type-spec) args
       (if *compiler-macro-expanding-p*
-          (no-applicable-polymorph name arg-list env)
+          (no-applicable-polymorph name env args arg-types)
           (if (eq t output-type-spec)
               object
               (error 'simple-type-error
