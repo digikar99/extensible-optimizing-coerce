@@ -105,6 +105,15 @@
   (def 02)
   (def 01))
 
+#-sbcl
+(warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL platforms")
+(define-coercion (int :from integer :to fixnum)
+  (let ((ub (mod int #.(expt 2 63))))
+    (if (< ub #.(expt 2 62))
+        ub
+        (- ub
+           #.(expt 2 63)))))
+
 ;; (macrolet ((def-signed-stub (type)
 ;;              `(define-coercion (num :from real :to ,type)
 ;;                 (mod)))))
