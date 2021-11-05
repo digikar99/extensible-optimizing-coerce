@@ -72,8 +72,8 @@
     (eval `(progn
              (is (b2-p (coerce (make-a1) 'b2)))
              (is (b2-p (coerce (make-a2) 'b2)))
-             (is (b2-p (coerce (make-a2) 'b1)))
-             (is (b2-p (coerce (make-a1) 'b1)))))
+             (signals type-error (b2-p (coerce (make-a2) 'b1)))
+             (signals type-error (b2-p (coerce (make-a1) 'b1)))))
     (eval `(undefine-coercion 'a1 'b2))
 
     (eval `(define-coercion (obj :from a1 :to b1) (make-b1)))

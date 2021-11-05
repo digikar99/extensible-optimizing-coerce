@@ -32,12 +32,12 @@
   (def-stub (signed-byte 64)))
 
 (macrolet ((def-stub (type)
-             `(define-coercion (,type :to character
-                                      :from ,type)
-                (cl:coerce ,type 'character))))
+             `(define-coercion (o :to character
+                                  :from ,type)
+                (cl:coerce o 'character))))
   (def-stub trivial-types:character-designator)
-  (def-stub character)
-  (def-stub string))
+  (def-stub (and character (not trivial-types:character-designator)))
+  (def-stub (and string (not trivial-types:character-designator))))
 
 ;; There is no proper notion of complex rationals in Common Lisp
 ;; (typep (cl:coerce 1 'complex) 'complex) ;=> NIL
@@ -67,7 +67,7 @@
 
 (define-coercion (symbol :from symbol :to function)
   (cl:coerce symbol 'function))
-(define-coercion (lambda-expression :from list :to function)
+(define-coercion (lambda-expression :from (and list (not null)) :to function)
   (cl:coerce lambda-expression 'function))
 
 ;; Beyond CLHS =================================================================
@@ -75,7 +75,7 @@
 (define-coercion (string-designator :to string
                                     :from trivial-types:string-designator)
   (string string-designator))
-(define-coercion (number :from number :to simple-string)
+(define-coercion (number :from number :to string)
   (write-to-string number))
 
 (define-coercion (str :from string :to integer) (parse-integer str))
@@ -84,7 +84,7 @@
 (define-coercion (char :from character :to integer) (char-code char))
 (define-coercion (code :from integer :to character) (code-char code))
 
-(define-coercion (pathname :from pathname :to simple-string) (namestring pathname))
+(define-coercion (pathname :from pathname :to string) (namestring pathname))
 (define-coercion (pathspec :from string   :to pathname) (pathname pathspec))
 
 (macrolet ((def (bits)
@@ -105,14 +105,14 @@
   (def 02)
   (def 01))
 
-#-sbcl
-(warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL platforms")
+#-(or ccl sbcl)
+(warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL/CCL platforms")
 (define-coercion (int :from integer :to fixnum)
-  (let ((ub (mod int #.(expt 2 63))))
-    (if (< ub #.(expt 2 62))
-        ub
-        (- ub
-           #.(expt 2 63)))))
+  (let* ((fixnum-range (1+ (- most-positive-fixnum most-negative-fixnum)))
+         (uint (mod int fixnum-range)))
+    (if (< uint (1+ most-positive-fixnum))
+        uint
+        (- uint fixnum-range))))
 
 ;; (macrolet ((def-signed-stub (type)
 ;;              `(define-coercion (num :from real :to ,type)

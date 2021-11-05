@@ -11,11 +11,16 @@
           (if (eq t output-type-spec)
               object
               (error 'simple-type-error
-                     :format-control "No coercion defined from ~S of type ~S to ~S. Available coercions include:~%  ~{~S~^~%  ~}"
+                     :format-control "No coercion defined from ~S of type~%  ~S~%to~%  ~S~%Available coercions include:~%  ~{~S~^~%  ~}"
                      :format-arguments (list object
                                              (type-of object)
                                              output-type-spec
-                                             (list-all-coercions))))))))
+                                             (let ((coercions-list (list-all-coercions)))
+                                               (if (and *print-length*
+                                                        (> (length coercions-list) *print-length*))
+                                                   (append (subseq coercions-list 0 *print-length*)
+                                                           '("..."))
+                                                   coercions-list)))))))))
 
 (define-polymorphic-function coerce (object output-type-spec)
   :default #'coerce-error
@@ -24,16 +29,9 @@
 internally makes use of coercions (lambda functions) defined using DEFINE-COERCION.
 
 The applicable coercion is guaranteed to take an object of (super)type of OBJECT
-and return an object of (sub)type specified by OUTPUT-TYPE-SPEC. If multiple
-coercions are applicable, the most specialized coercion is selected.
-
-For instance, consider two coercions defined as:
-
-    (define-coercion (list :from list :to string) (write-to-string list))
-    (define-coercion (list :from list :to vector) (cl:coerce list 'vector))
-
-FIXME: Then, the value of `(coerce '(1 2 3) 'vector)` is permitted to be `\"(1 2 3)\"`.
-One may use `(coerce '(1) '(and vector (not string)))` to obtain the expected.")
+and return an object of (sub)type specified by OUTPUT-TYPE-SPEC. It is guaranteed
+that only a single (predefined) coercion is applicable for a given OUTPUT-TYPE-SPEC.
+")
 
 (defmacro define-coercion ((var &key (to nil to-p) (from t))
                            &body body)
@@ -47,26 +45,26 @@ If a TYPE= coercion is available, and
   - if IF-EXISTS is :ERROR, an ERROR is signalled"
   (declare (ignore to-p))
   (alexandria:with-gensyms (output-type-spec)
-    `(defpolymorph coerce ((,var ,from) (,output-type-spec (supertypep ,to))) ,to
+    `(defpolymorph coerce ((,var ,from) (,output-type-spec (type= ,to))) ,to
        (declare (ignorable ,var ,output-type-spec))
        ,@body)))
 
 (defun undefine-coercion (from to)
   "Removes a coercion TYPE= to FROM and TO."
   ;; FIXME: TYPE= checks in polymorphic-functions
-  (undefpolymorph 'coerce `(,from (supertypep ,to))))
+  (undefpolymorph 'coerce `(,from (type= ,to))))
 
 (defun list-all-coercions (&optional (to nil to-p))
   (remove-duplicates (mapcar (lambda (type-list)
-                               (destructuring-bind (%from (supertypep %to)) type-list
-                                 (declare (ignore supertypep))
+                               (destructuring-bind (%from (type= %to)) type-list
+                                 (declare (ignore type=))
                                  (if to-p
                                      %from
                                      (list :from %from :to %to))))
                              (remove-if-not (lambda (type-list)
-                                              (destructuring-bind (%from (supertypep %to))
+                                              (destructuring-bind (%from (type= %to))
                                                   type-list
-                                                (declare (ignore %from supertypep))
+                                                (declare (ignore %from type=))
                                                 (if to-p
                                                     (subtypep to %to)
                                                     t)))

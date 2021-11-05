@@ -121,12 +121,10 @@ The form `(define-coercion (sequence :to list :from sequence) (cl:coerce sequenc
 
 ```lisp
 (defpolymorph coerce
-    ((sequence sequence) (#:output-type-spec2636 (supertypep list)))
+    ((sequence sequence) (#:output-type-spec1824 (type= list)))
     list
-  (declare (ignorable sequence #:output-type-spec2636))
+  (declare (ignorable sequence #:output-type-spec1824))
   (common-lisp:coerce sequence 'list))
 ```
 
-Thus, we use the extended type `(supertypep list)` to denote all the type specifiers that are a supertype of `list`. Thus `(typep 'sequence (supertypep list))` and `(typep t '(supertypep list))` holds (using `polymorphic-functions.extended-types:typep`).
-
-Amongst these, consider `(supertypep string)` and `(supertypep vector)` - and note that the latter is a subset (and hence a subtype) of the former. In other words, the polymorph corresponding to the latter is a more specialized polymorph than the former. And thus, this most specialized polymorph is chosen accordingly.
+Thus, we use the extended type `(type= list)` to denote all the type specifiers that are a type= to `list`. Thus `(typep '(and list) '(type= list))` holds (using `polymorphic-functions.extended-types:typep`).
