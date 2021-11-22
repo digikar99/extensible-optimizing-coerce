@@ -86,6 +86,5 @@
              (signals type-error (coerce (make-a2) 'b2))))
     (eval `(undefine-coercion 'a1 'b1))
 
-    (mapcar #'unintern '(a1 a2 b1 b2))
     (mapcar #'fmakunbound '(b1-p b2-p))))
 

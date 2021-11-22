@@ -45,7 +45,7 @@ If a TYPE= coercion is available, and
   - if IF-EXISTS is :ERROR, an ERROR is signalled"
   (declare (ignore to-p))
   (alexandria:with-gensyms (output-type-spec)
-    `(defpolymorph coerce ((,var ,from) (,output-type-spec (type= ,to))) ,to
+    `(defpolymorph (coerce :inline t) ((,var ,from) (,output-type-spec (type= ,to))) ,to
        (declare (ignorable ,var ,output-type-spec))
        ,@body)))
 
