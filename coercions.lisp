@@ -36,7 +36,6 @@
                                   :from ,type)
                 (cl:coerce o 'character))))
   (def-stub trivial-types:character-designator)
-  (def-stub (and character (not trivial-types:character-designator)))
   (def-stub (and string (not trivial-types:character-designator))))
 
 ;; There is no proper notion of complex rationals in Common Lisp
