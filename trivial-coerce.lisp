@@ -68,6 +68,13 @@ If a TYPE= coercion is available, and
                                                 (if to-p
                                                     (subtypep to %to)
                                                     t)))
-                                            (polymorphic-function-type-lists
-                                             (fdefinition 'coerce))))
+                                            (remove '(t t)
+                                                    (polymorphic-function-type-lists
+                                                     (fdefinition 'coerce))
+                                                    :test #'equal)))
                      :test #'equalp))
+
+(defpolymorph coerce (object output-type-spec) t
+  (if (typep object output-type-spec)
+      object
+      (coerce-error 'coerce nil (list object output-type-spec))))
