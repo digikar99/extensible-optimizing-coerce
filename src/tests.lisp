@@ -1,5 +1,8 @@
 (defpackage :trivial-coerce/tests
+  #-extensible-compound-types
   (:use :cl :fiveam :trivial-coerce)
+  #+extensible-compound-types
+  (:use :extensible-compound-types-cl :fiveam :trivial-coerce)
   (:shadowing-import-from :trivial-coerce :coerce))
 
 (in-package :trivial-coerce/tests)
@@ -42,9 +45,9 @@
 
 (def-test to-function ()
   ;; http://clhs.lisp.se/Body/f_coerce.htm
-  (is (eq (fdefinition 'coerce) (coerce 'coerce 'function)))
-  (is (functionp (coerce '(lambda ()) 'function)))
-  (signals error (coerce '(progn (lambda ())) 'function)))
+  (is (eq (fdefinition 'coerce) (coerce 'coerce 'cl:function)))
+  (is (functionp (coerce '(cl:lambda ()) 'cl:function)))
+  (signals error (coerce '(progn (lambda ())) 'cl:function)))
 
 (def-test to-string ()
   (is (string= "A" (coerce 'a 'string)))
@@ -87,4 +90,3 @@
     (eval `(undefine-coercion 'a1 'b1))
 
     (mapcar #'fmakunbound '(b1-p b2-p))))
-

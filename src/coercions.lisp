@@ -64,10 +64,10 @@
   (def-stub short-float)
   (def-stub long-float))
 
-(define-coercion (symbol :from symbol :to function)
-  (cl:coerce symbol 'function))
-(define-coercion (lambda-expression :from (and list (not null)) :to function)
-  (cl:coerce lambda-expression 'function))
+(define-coercion (symbol :from symbol :to cl:function)
+  (cl:coerce symbol 'cl:function))
+(define-coercion (lambda-expression :from cons :to cl:function)
+  (cl:coerce lambda-expression 'cl:function))
 
 ;; Beyond CLHS =================================================================
 
