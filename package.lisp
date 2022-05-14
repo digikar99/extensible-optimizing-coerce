@@ -1,3 +1,14 @@
+#+extensible-compound-types
+(defpackage :trivial-coerce
+  (:use :extensible-compound-types-cl :polymorphic-functions)
+  (:shadow #:coerce)
+  (:export
+   #:coerce
+   #:define-coercion
+   #:undefine-coercion
+   #:list-all-coercions))
+
+#-extensible-compound-types
 (defpackage :trivial-coerce
   (:use :cl :ctype :polymorphic-functions)
   (:shadowing-import-from
@@ -19,6 +30,8 @@
    #:list-all-coercions))
 
 (in-package :trivial-coerce)
+
+#-extensible-compound-types
 (setf (alexandria:assoc-value *subtypep-alist*
                               (cons '(and symbol trivial-types:character-designator)
                                     nil)
