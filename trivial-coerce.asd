@@ -8,7 +8,6 @@
                "ctype")
   :version "0.0.2"
   :serial t
-  :pathname #P"src/"
   :components ((:file "package")
                (:file "trivial-coerce")
                (:file "coercions"))
@@ -21,7 +20,6 @@
   :depends-on ("trivial-coerce"
                "fiveam")
   :components ((:file "tests"))
-  :pathname #P"src/"
   :perform (test-op (o c)
              (eval (read-from-string "(LET ((5AM:*ON-ERROR* :DEBUG)
                                             (5AM:*ON-FAILURE* :DEBUG))
