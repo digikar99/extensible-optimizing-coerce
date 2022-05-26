@@ -74,7 +74,13 @@ If a TYPE= coercion is available, and
                                                     :test #'equal)))
                      :test #'equalp))
 
-(defpolymorph coerce (object output-type-spec) t
-  (if (typep object output-type-spec)
-      object
-      (coerce-error 'coerce nil (list object output-type-spec))))
+(defvar *trivial-coerce-toplevel-p* t
+  "Used inside the default COERCE POLYMORPH to better the case of undefined coercions.")
+(defpolymorph (coerce :inline nil) (object output-type-spec) t
+  (cond ((typep object output-type-spec)
+         object)
+        ((not *trivial-coerce-toplevel-p*)
+         (coerce-error 'coerce nil (list object output-type-spec) nil))
+        (t
+         (let ((*trivial-coerce-toplevel-p* nil))
+           (trivial-coerce:coerce object output-type-spec)))))
