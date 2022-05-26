@@ -104,6 +104,9 @@
   (def 02)
   (def 01))
 
+(define-coercion (n :from single-float :to double-float) (cl:coerce n 'double-float))
+(define-coercion (n :from double-float :to single-float) (cl:coerce n 'single-float))
+
 #-(or ccl sbcl)
 (warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL/CCL platforms")
 (define-coercion (int :from integer :to fixnum)
