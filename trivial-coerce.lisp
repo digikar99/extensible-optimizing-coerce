@@ -1,6 +1,9 @@
 (in-package :trivial-coerce)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+
+  (defvar *trivial-coerce-toplevel-p* t
+    "Used inside the default COERCE POLYMORPH to better the case of undefined coercions.")
   (defun coerce-error (name env args &optional arg-types)
     ;; This is a commentary from the time when COERCE was for non-extended types:
     ;; Should we use CTYPE here? Naah, just let users use this as a DROP-IN replacement
@@ -8,19 +11,25 @@
     (destructuring-bind (object output-type-spec) args
       (if *compiler-macro-expanding-p*
           (no-applicable-polymorph name env args arg-types)
-          (if (eq t output-type-spec)
-              object
-              (error 'simple-type-error
-                     :format-control "No coercion defined from ~S of type~%  ~S~%to~%  ~S~%Available coercions include:~%  ~{~S~^~%  ~}"
-                     :format-arguments (list object
-                                             (type-of object)
-                                             output-type-spec
-                                             (let ((coercions-list (list-all-coercions)))
-                                               (if (and *print-length*
-                                                        (> (length coercions-list) *print-length*))
-                                                   (append (subseq coercions-list 0 *print-length*)
-                                                           '("..."))
-                                                   coercions-list)))))))))
+          (cond ((eq t output-type-spec)
+                 object)
+                ((typep object output-type-spec)
+                 object)
+                ((not *trivial-coerce-toplevel-p*)
+                 (error 'simple-type-error
+                        :format-control "No coercion defined from ~S of type~%  ~S~%to~%  ~S~%Available coercions include:~%  ~{~S~^~%  ~}"
+                        :format-arguments (list object
+                                                (type-of object)
+                                                output-type-spec
+                                                (let ((coercions-list (list-all-coercions)))
+                                                  (if (and *print-length*
+                                                           (> (length coercions-list) *print-length*))
+                                                      (append (subseq coercions-list 0 *print-length*)
+                                                              '("..."))
+                                                      coercions-list)))))
+                (t
+                 (let ((*trivial-coerce-toplevel-p* nil))
+                   (trivial-coerce:coerce object output-type-spec))))))))
 
 (define-polymorphic-function coerce (object output-type-spec)
   :default #'coerce-error
@@ -74,13 +83,3 @@ If a TYPE= coercion is available, and
                                                     :test #'equal)))
                      :test #'equalp))
 
-(defvar *trivial-coerce-toplevel-p* t
-  "Used inside the default COERCE POLYMORPH to better the case of undefined coercions.")
-(defpolymorph (coerce :inline nil) (object output-type-spec) t
-  (cond ((typep object output-type-spec)
-         object)
-        ((not *trivial-coerce-toplevel-p*)
-         (coerce-error 'coerce nil (list object output-type-spec) nil))
-        (t
-         (let ((*trivial-coerce-toplevel-p* nil))
-           (trivial-coerce:coerce object output-type-spec)))))
