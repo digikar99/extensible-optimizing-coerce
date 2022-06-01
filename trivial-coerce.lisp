@@ -66,7 +66,7 @@ If a TYPE= coercion is available, and
                                                   type-list
                                                 (declare (ignore %from type=))
                                                 (if to-p
-                                                    (subtypep to %to)
+                                                    (type= to %to)
                                                     t)))
                                             (remove '(t t)
                                                     (polymorphic-function-type-lists
