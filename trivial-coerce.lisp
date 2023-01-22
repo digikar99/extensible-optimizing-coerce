@@ -11,7 +11,7 @@
 
 (defmacro named-lambda (name lambda-list &body body)
   `(flet ((,name ,lambda-list ,@body))
-     (function ,name)))
+     (cl:function ,name)))
 
 (defun coerce (object output-type-spec)
   "Converts OBJECT to type specified by OUTPUT-TYPE-SPEC. To do so, the system
@@ -38,9 +38,21 @@ that only a single (predefined) coercion is applicable for a given OUTPUT-TYPE-S
                       (class-name-from-type-spec output-type-spec))
                      (t
                       (values (clhs-class-from-type-spec output-type-spec) nil)))
-             (apply (coercion from-class to-class)
-                    object
-                    args))))))
+             (let ((coercion (coercion from-class to-class)))
+               (if coercion
+                   (apply coercion object args)
+                   (error 'simple-type-error
+                          :format-control "No coercion defined from ~S of type~%  ~S~%to~%  ~S~%Available coercions include:~%  ~{~S~^~%  ~}"
+                          :format-arguments
+                          (list object
+                                from-class
+                                output-type-spec
+                                (let ((coercions-list (list-all-coercions)))
+                                  (if (and *print-length*
+                                           (> (length coercions-list) *print-length*))
+                                      (append (subseq coercions-list 0 *print-length*)
+                                              '("..."))
+                                      coercions-list)))))))))))
 
 (defun speed-more-than-safety-p (&optional env)
   (> (introspect-environment:policy-quality 'speed env)
