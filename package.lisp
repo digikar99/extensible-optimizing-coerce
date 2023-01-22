@@ -1,6 +1,6 @@
 #+extensible-compound-types
 (defpackage :trivial-coerce
-  (:use :extensible-compound-types-cl :polymorphic-functions)
+  (:use :extensible-compound-types-cl)
   (:shadow #:coerce)
   (:export
    #:coerce
@@ -11,6 +11,9 @@
 #-extensible-compound-types
 (defpackage :trivial-coerce
   (:use :cl :ctype :polymorphic-functions)
+  (:import-from :extensible-compound-types
+                #:clhs-class-from-type-spec
+                #:clhs-class-from-object)
   (:shadowing-import-from
    :polymorphic-functions.extended-types
    #:*extended-type-specifiers*
@@ -22,6 +25,7 @@
    #:typep
    #:type=
    #:type-pair-=)
+  (:import-from :ctype #:typexpand)
   (:shadow #:coerce)
   (:export
    #:coerce

@@ -4,11 +4,14 @@
   :author "Shubhamkar Ayare (shubhamayare@yahoo.co.in)"
   :description "`trivial-coerce` primarily provides a `trivial-coerce:coerce` function intended as an extensible alternative to `cl:coerce`."
   :depends-on ("trivial-types"
-               "polymorphic-functions"
+               "closer-mop"
+               "optima"
+               (:feature :extensible-compound-types "extensible-compound-types-cl")
                "ctype")
   :version "0.0.2"
   :serial t
   :components ((:file "package")
+               (:file "tables")
                (:file "trivial-coerce")
                (:file "coercions"))
   :in-order-to ((test-op (test-op "trivial-coerce/tests"))))

@@ -2,8 +2,7 @@
 
 ## Status
 
-- Re-implemented using [polymorphic-functions.extended-types](https://github.com/digikar99/polymorphic-functions/) use `(optimize (speed 3))` with (< debug 3) to compile-time optimize for inline static dispatch.
-- API is immature; wait for a few months or years until this library gets more thoroughly tested.
+- Library is immature; wait for a few months or years until this library gets more thoroughly tested.
 
 I suspect that unless there are requests, I will not work on optimizing for run-time performance.
 
@@ -11,9 +10,7 @@ I suspect that unless there are requests, I will not work on optimizing for run-
 
 Crucial dependencies:
 
-- [polymorphic-functions](https://github.com/digikar99/polymorphic-functions/)
 - [ctype](https://github.com/s-expressionists/ctype/)
-- optionally [extensible-compound-types](https://github.com/digikar99/extensible-compound-types/)
 
 ## Why
 
@@ -27,7 +24,7 @@ See [coercions.lisp](./coercions.lisp) and [tests.lisp](./tests.lisp) and docstr
 
 ## generic-cl:coerce
 
-I do not find generic-functions suitable for the purpose of coercion. For instance:
+A naive use of generic-functions is not suitable for the purpose of coercion in the Common Lisp world. For instance:
 
 ```lisp
 (in-package :generic-cl)
@@ -38,12 +35,13 @@ I do not find generic-functions suitable for the purpose of coercion. For instan
 (coerce 2.5 'integer) ;=> works
 (coerce 2.5 'int) ;=> does not work
 (trivial-coerce:coerce 2.5 'int) ;=> works
-
-;; Yet another example would concern the order of applicants in a OR or AND or MEMBER
-;; compound-type-specifiers - and it surely feels useful to say: (and vector (not string))
 ```
 
-I do not know of alternatives.
+## Philosophy
+
+An earlier version of trivial-coerce allowed for coercions between arbitrary *types*. However, that made no sense, since coercions seem to be intended at changing the internal representation of an object. The more appropriate representation of the internal structure is the *class* of which the object is an instance of! See [Pittman's Best of Intentions](http://www.nhplace.com/kent/PS/EQUAL.html).
+
+Thus, now, coercions can only be defined from one *class* to another *class*. One may certainly supply additional arguments. See [coercions.lisp](./coercions.lisp) for examples.
 
 ## Documentation
 
@@ -66,66 +64,79 @@ Example usages of `define-coercion` can be found in [coercions.lisp](./coercions
 
 ```lisp
 CL-USER> (defun to-type (a type)
-           (coerce a type))
+           (trivial-coerce:coerce a type))
 TO-TYPE
 CL-USER> (defun to-type (a type)
            (declare (optimize speed))
-           (coerce a type))
+           (trivial-coerce:coerce a type))
 
-; (Compiler) Macro of
-;    #<POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION COERCE (38)> 
-; is unable to optimize
-;   (COERCE A TYPE)
+; (Compiler) Macro of TRIVIAL-COERCE:COERCE is unable to optimize
+;   (TRIVIAL-COERCE:COERCE A TYPE)
 ; because:
-;   
-;   Type of
-;     TYPE
-;   could not be determined
+;
+;   Could not derive the OUTPUT-TYPE-SPEC from its type derived to be
+;     T
 WARNING: redefining COMMON-LISP-USER::TO-TYPE in DEFUN
 TO-TYPE
-CL-USER> (defun to-string (a)
+CL-USER> (defun to-integer (a)
            (declare (optimize speed))
-           (coerce a 'string))
-           
-; (Compiler) Macro of
-;    #<POLYMORPHIC-FUNCTIONS:POLYMORPHIC-FUNCTION COERCE (38)> 
-; is unable to optimize
-;   (COERCE A 'STRING)
+           (trivial-coerce:coerce a 'integer))
+
+; (Compiler) Macro of TRIVIAL-COERCE:COERCE is unable to optimize
+;   (TRIVIAL-COERCE:COERCE A 'INTEGER)
 ; because:
-;   
-;   Type of
-;     A
-;   could not be determined
-TO-STRING
-CL-USER> (defun to-string (a)
+;
+;   No coercion found for object derived to be of type
+;     T
+;   to output-type-spec
+;     (INTEGER)
+TO-INTEGER
+CL-USER> (defun to-integer (a)
            (declare (optimize speed)
-                    (type number a))
-           (coerce a 'string))
-WARNING: redefining COMMON-LISP-USER::TO-STRING in DEFUN
-TO-STRING
-CL-USER> (disassemble 'to-string)
-; disassembly for TO-STRING
-; Size: 17 bytes. Origin: #x5374A224                          ; TO-STRING
-; 24:       B902000000       MOV ECX, 2
-; 29:       FF7508           PUSH QWORD PTR [RBP+8]
-; 2C:       B8C2333650       MOV EAX, #x503633C2              ; #<FDEFN SB-INT:STRINGIFY-OBJECT>
-; 31:       FFE0             JMP RAX
-; 33:       CC10             INT3 16                          ; Invalid argument count trap
+                    (type real a))
+           (trivial-coerce:coerce a 'integer))
+WARNING: redefining EXCL::TO-INTEGER in DEFUN
+TO-INTEGER
+CL-USER> (disassemble 'to-integer)
+; disassembly for TO-INTEGER
+; Size: 141 bytes. Origin: #x53B6AB8F                         ; TO-INTEGER
+; B8F:       4883EC10         SUB RSP, 16
+; B93:       488B55F8         MOV RDX, [RBP-8]
+; B97:       48892C24         MOV [RSP], RBP
+; B9B:       488BEC           MOV RBP, RSP
+; B9E:       B842462550       MOV EAX, #x50254642             ; #<FDEFN SB-KERNEL:UNARY-TRUNCATE>
+; BA3:       FFD0             CALL RAX
+; BA5:       488955F0         MOV [RBP-16], RDX
+; BA9:       48897DE8         MOV [RBP-24], RDI
+; BAD:       488B55E8         MOV RDX, [RBP-24]
+; BB1:       31FF             XOR EDI, EDI
+; BB3:       FF142598050050   CALL [#x50000598]               ; #x52A00FF0: GENERIC-=
+; BBA:       751F             JNE L2
+; BBC: L0:   488B45F0         MOV RAX, [RBP-16]
+; BC0:       488B7DE8         MOV RDI, [RBP-24]
+; BC4: L1:   488BD0           MOV RDX, RAX
+; BC7:       488D5D10         LEA RBX, [RBP+16]
+; BCB:       B904000000       MOV ECX, 4
+; BD0:       BE17010050       MOV ESI, #x50000117             ; NIL
+; BD5:       F9               STC
+; BD6:       488BE5           MOV RSP, RBP
+; BD9:       5D               POP RBP
+; BDA:       C3               RET
+; BDB: L2:   488B55F8         MOV RDX, [RBP-8]
+; BDF:       31FF             XOR EDI, EDI
+; BE1:       FF142588050050   CALL [#x50000588]               ; #x52A00F90: GENERIC-<
+; BE8:       7DD2             JNL L0
+; BEA:       488B55F0         MOV RDX, [RBP-16]
+; BEE:       BF02000000       MOV EDI, 2
+; BF3:       FF142570050050   CALL [#x50000570]               ; #x52A00E30: GENERIC--
+; BFA:       488BC2           MOV RAX, RDX
+; BFD:       488945F8         MOV [RBP-8], RAX
+; C01:       488B55E8         MOV RDX, [RBP-24]
+; C05:       BF02000000       MOV EDI, 2
+; C0A:       FF142568050050   CALL [#x50000568]               ; #x52A00DC0: GENERIC-+
+; C11:       488BFA           MOV RDI, RDX
+; C14:       488B45F8         MOV RAX, [RBP-8]
+; C18:       EBAA             JMP L1
+; C1A:       CC10             INT3 16                         ; Invalid argument count trap
 NIL
 ```
-
-### Role of Extended Types
-
-The form `(define-coercion (sequence :to list :from sequence) (cl:coerce sequence 'list))` macroexpands to:
-
-```lisp
-(defpolymorph (coerce :inline t)
-    ((sequence sequence) (#:output-type-spec1824 (type= list)))
-    list
-  (declare (ignorable sequence #:output-type-spec1824))
-  (common-lisp:coerce sequence 'list))
-```
-
-Thus, we use the extended type `(type= list)` to denote all the type specifiers that are type= to `list`. Thus `(typep '(and list) '(type= list))` holds (using `polymorphic-functions.extended-types:typep`).
-
-*If you are using [extensible-compound-types](https://github.com/digikar99/extensible-compound-types/), then the appropriate `type=` would be `extensible-compound-types:type=` instead of `polymorphic-functions.extended-types:type=`.
