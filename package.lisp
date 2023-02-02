@@ -14,7 +14,7 @@
   (:import-from :extensible-compound-types
                 #:clhs-class-from-type-spec
                 #:clhs-class-from-object)
-  (:import-from :extensible-compound-types #:typexpand)
+  (:import-from :extensible-compound-types #:typexpand #:type=)
   (:shadow #:coerce)
   (:export
    #:coerce
