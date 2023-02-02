@@ -6,8 +6,8 @@
   :depends-on ("trivial-types"
                "closer-mop"
                "optima"
-               (:feature :extensible-compound-types "extensible-compound-types-cl")
-               "ctype")
+               "extensible-compound-types"
+               (:feature :extensible-compound-types "extensible-compound-types-cl"))
   :version "0.0.2"
   :serial t
   :components ((:file "package")
