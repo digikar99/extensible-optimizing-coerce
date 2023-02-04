@@ -13,7 +13,8 @@
   (:use :cl)
   (:import-from :extensible-compound-types
                 #:clhs-class-from-type-spec
-                #:clhs-class-from-object)
+                #:clhs-class-from-object
+                #:specializing)
   (:import-from :extensible-compound-types #:typexpand #:type=)
   (:shadow #:coerce)
   (:export
