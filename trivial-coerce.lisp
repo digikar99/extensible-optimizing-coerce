@@ -13,6 +13,8 @@
   `(flet ((,name ,lambda-list ,@body))
      (cl:function ,name)))
 
+;; COERCE operates from a type to a class
+
 (defun coerce (object output-type-spec)
   "Converts OBJECT to type specified by OUTPUT-TYPE-SPEC. To do so, the system
 internally makes use of coercions (lambda functions) defined using DEFINE-COERCION.
@@ -26,18 +28,18 @@ that only a single (predefined) coercion is applicable for a given OUTPUT-TYPE-S
         ((typep object output-type-spec)
          object)
         (t
-         (let* ((from-class (clhs-class-from-object object)))
+         (let* ((from-class (class-name (class-of object))))
            (multiple-value-bind (to-class args)
-               (cond ((and (atom output-type-spec)
+               (optima:match (typexpand output-type-spec)
+                 ((list* 'specializing class-name args)
+                  (values class-name args))
+                 ((list class-name args)
+                  (values class-name args))
+                 (_
+                  (if (and (atom output-type-spec)
                            (ignore-errors (find-class output-type-spec nil)))
-                      (values output-type-spec nil))
-                     ((and (consp output-type-spec)
-                           (ignore-errors (find-class (first output-type-spec) nil)))
-                      (values (first output-type-spec) (rest output-type-spec)))
-                     ((consp output-type-spec)
-                      (class-name-from-type-spec output-type-spec))
-                     (t
-                      (values (clhs-class-from-type-spec output-type-spec) nil)))
+                      (values output-type-spec nil)
+                      (values (clhs-class-from-type-spec output-type-spec) nil))))
              (let ((coercion (coercion from-class to-class)))
                (if coercion
                    (apply coercion object args)
@@ -116,6 +118,9 @@ where the class name has a LIST form of the type specifier."
   (declare (ignore to-p))
   (check-type from symbol)
   (check-type to symbol)
+  (assert (or (null lambda-list)
+              (eq to
+                  (class-name-from-type-spec to))))
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setf (coercion ',from ',to) (named-lambda coerce (,var ,@lambda-list) ,@body))
      (setf (coercion-expression ',from ',to) '(cl:lambda (,var ,@lambda-list) ,@body))
@@ -142,8 +147,9 @@ where the class name has a LIST form of the type specifier."
                                                     (type= to %to)
                                                     t)))
                                             (remove '(t . t)
-                                                    (alexandria:hash-table-keys
-                                                     *coercion-table*)
+                                                    (mapcar #'car
+                                                            (coercion-table-all
+                                                             *coercion-table*))
                                                     :test #'equal)))
                      :test #'equalp))
 

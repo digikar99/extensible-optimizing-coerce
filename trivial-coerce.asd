@@ -5,9 +5,10 @@
   :description "`trivial-coerce` primarily provides a `trivial-coerce:coerce` function intended as an extensible alternative to `cl:coerce`."
   :depends-on ("trivial-types"
                "closer-mop"
+               "ctype"
                "optima"
                "extensible-compound-types"
-               (:feature :extensible-compound-types "extensible-compound-types-cl"))
+               "extensible-compound-types-interfaces")
   :version "0.0.3"
   :serial t
   :components ((:file "package")
@@ -21,6 +22,7 @@
   :author "Shubhamkar Ayare (shubhamayare@yahoo.co.in)"
   :description "Test system for trivial-coerce."
   :depends-on ("trivial-coerce"
+               (:feature :extensible-compound-types "extensible-compound-types-cl")
                "fiveam")
   :components ((:file "tests"))
   :perform (test-op (o c)

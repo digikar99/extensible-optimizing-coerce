@@ -3,8 +3,8 @@
 (define-coercion (object :from t :to t) () object)
 
 (define-coercion (sequence :to list :from sequence) ()  (cl:coerce sequence 'list))
-(define-coercion (sequence :to vector :from sequence) (&rest args)
-  (cl:coerce sequence `(vector ,@args)))
+(define-coercion (sequence :to array :from sequence) (&rest args)
+  (cl:coerce sequence (upgraded-cl-type `(specializing array ,@args))))
 
 (macrolet ((def-stub (type)
              `(define-coercion (o :to character
@@ -52,6 +52,14 @@
   (declare (ignore low high))
   (floor number))
 
+(define-coercion (number :from real :to single-float) (&optional low high)
+  (declare (ignore low high))
+  (cl:coerce number 'single-float))
+
+(define-coercion (number :from real :to double-float) (&optional low high)
+  (declare (ignore low high))
+  (cl:coerce number 'double-float))
+
 (define-coercion (char :from character :to integer) ()
   (char-code char))
 (define-coercion (code :from integer :to character) ()
@@ -75,8 +83,12 @@
              (let ((diff (- high low -1)))
                (+ (mod (- int low) diff) low))))))
 
-(define-coercion (n :from single-float :to double-float) () (cl:coerce n 'double-float))
-(define-coercion (n :from double-float :to single-float) () (cl:coerce n 'single-float))
+(define-coercion (n :from single-float :to double-float) (&rest args)
+  (declare (ignore args))
+  (cl:coerce n 'double-float))
+(define-coercion (n :from double-float :to single-float) (&rest args)
+  (declare (ignore args))
+  (cl:coerce n 'single-float))
 
 #-(or ccl sbcl)
 (warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL/CCL platforms")
