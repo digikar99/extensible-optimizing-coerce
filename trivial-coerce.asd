@@ -9,7 +9,7 @@
                "optima"
                "extensible-compound-types"
                "extensible-compound-types-interfaces")
-  :version "0.0.3"
+  :version "0.0.4"
   :serial t
   :components ((:file "package")
                (:file "tables")
