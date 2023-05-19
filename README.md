@@ -1,20 +1,16 @@
-# trivial-coerce
+# extensible-optimizing-coerce
 
 ## Status
 
 - Library is immature; wait for a few months or years until this library gets more thoroughly tested.
 
-I suspect that unless there are requests, I will not work on optimizing for run-time performance.
-
->In case someone has a better idea for `trivial-coerce` - feel free to raise an issue, and in the worst case, if more than a handful think (or I get convinced) the other library better deserves the name, I'd be glad to rename this library to something else. (Therefore, use with package-local-nicknames.)
-
 Crucial dependencies:
 
-- [ctype](https://github.com/s-expressionists/ctype/)
+![coerce.png](./coerce.png?raw=true)
 
 ## Why
 
-Common Lisp has a variety of non-uniform type-conversions. Some use `cl:coerce`, others use `cl:float` or `cl:string`, and lots more. In some sense, the `cl:coerce` function is information-preserving in that it prevents non-integers from being coerced into integers, or characters from being converted to and from integers. If you find these semantics useful, you might not find `trivial-coerce:coerce` as useful.
+Common Lisp has a variety of non-uniform type-conversions. Some use `cl:coerce`, others use `cl:float` or `cl:string`, and lots more. In some sense, the `cl:coerce` function is information-preserving in that it prevents non-integers from being coerced into integers, or characters from being converted to and from integers. If you find these semantics useful, you might not find `extensible-optimizing-coerce:coerce` as useful.
 
 OTOH, a case could be made that the prevalence of information non-preserving type conversions makes things easier for prototyping, enables better polymorphism, as well as makes things easier for new people.
 
@@ -34,18 +30,18 @@ A naive use of generic-functions is not suitable for the purpose of coercion in 
 
 (coerce 2.5 'integer) ;=> works
 (coerce 2.5 'int) ;=> does not work
-(trivial-coerce:coerce 2.5 'int) ;=> works
+(extensible-optimizing-coerce:coerce 2.5 'int) ;=> works
 ```
 
 ## Philosophy
 
-An earlier version of trivial-coerce allowed for coercions between arbitrary *types*. However, that made no sense, since coercions seem to be intended at changing the internal representation of an object. The more appropriate representation of the internal structure is the *class* of which the object is an instance of! See [Pittman's Best of Intentions](http://www.nhplace.com/kent/PS/EQUAL.html).
+An earlier version of this library allowed for coercions between arbitrary *types*. However, that made no sense, since coercions seem to be intended at changing the internal representation of an object. The more appropriate representation of the internal structure is the *class* of which the object is an instance of! See [Pittman's Best of Intentions](http://www.nhplace.com/kent/PS/EQUAL.html).
 
 Thus, now, coercions can only be defined from one *class* to another *class*. One may certainly supply additional arguments. See [coercions.lisp](./coercions.lisp) for examples.
 
 ## Documentation
 
-The main function is `(trivial-coerce:coerce object output-type-spec)`:
+The main function is `(extensible-optimizing-coerce:coerce object output-type-spec)`:
 This converts OBJECT to type specified by OUTPUT-TYPE-SPEC.
 
 The applicable coercion is guaranteed to take an object of (super)type of OBJECT
@@ -58,19 +54,22 @@ and return an object of type= specified by OUTPUT-TYPE-SPEC. (See [Role of Exten
 - define-coercion
 - undefine-coercion
 
-Example usages of `define-coercion` can be found in [coercions.lisp](./coercions.lisp).
+Example usages of `define-coercion` can be found in [coercions.lisp](./coercions.lisp). Note that this also allows for additional coercion parameters. 
 
 ### Compile Time Optimizations
 
 ```lisp
+CL-USER> (trivial-package-local-nicknames:add-package-local-nickname
+          :coerce :extensible-optimizing-coerce)
+#<PACKAGE "COMMON-LISP-USER">
 CL-USER> (defun to-type (a type)
-           (trivial-coerce:coerce a type))
+           (coerce:coerce a type))
 TO-TYPE
 CL-USER> (defun to-type (a type)
            (declare (optimize speed))
-           (trivial-coerce:coerce a type))
+           (coerce:coerce a type))
 
-; (Compiler) Macro of TRIVIAL-COERCE:COERCE is unable to optimize
+; (Compiler) Macro of COERCE:COERCE is unable to optimize
 ;   (TRIVIAL-COERCE:COERCE A TYPE)
 ; because:
 ;
@@ -80,10 +79,10 @@ WARNING: redefining COMMON-LISP-USER::TO-TYPE in DEFUN
 TO-TYPE
 CL-USER> (defun to-integer (a)
            (declare (optimize speed))
-           (trivial-coerce:coerce a 'integer))
+           (coerce:coerce a 'integer))
 
-; (Compiler) Macro of TRIVIAL-COERCE:COERCE is unable to optimize
-;   (TRIVIAL-COERCE:COERCE A 'INTEGER)
+; (Compiler) Macro of COERCE:COERCE is unable to optimize
+;   (COERCE:COERCE A 'INTEGER)
 ; because:
 ;
 ;   No coercion found for object derived to be of type
@@ -94,7 +93,7 @@ TO-INTEGER
 CL-USER> (defun to-integer (a)
            (declare (optimize speed)
                     (type real a))
-           (trivial-coerce:coerce a 'integer))
+           (coerce:coerce a 'integer))
 WARNING: redefining EXCL::TO-INTEGER in DEFUN
 TO-INTEGER
 CL-USER> (disassemble 'to-integer)

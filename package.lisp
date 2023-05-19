@@ -1,4 +1,4 @@
-(defpackage :trivial-coerce
+(defpackage :extensible-optimizing-coerce
   (:use :cl)
   (:import-from :extensible-compound-types
                 #:clhs-class-from-type-spec
@@ -14,4 +14,4 @@
    #:undefine-coercion
    #:list-all-coercions))
 
-(in-package :trivial-coerce)
+(in-package :extensible-optimizing-coerce)

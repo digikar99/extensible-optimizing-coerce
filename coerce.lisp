@@ -1,4 +1,4 @@
-(in-package :trivial-coerce)
+(in-package :extensible-optimizing-coerce)
 
 (defun class-name-from-type-spec (type-spec)
   (optima:match (typexpand type-spec)

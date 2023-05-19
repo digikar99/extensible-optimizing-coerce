@@ -1,4 +1,4 @@
-(in-package :trivial-coerce)
+(in-package :extensible-optimizing-coerce)
 
 (defstruct coercion-table
   (cache (make-hash-table :test #'equal) :type hash-table)

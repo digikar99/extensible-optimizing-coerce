@@ -1,14 +1,14 @@
-(defpackage :trivial-coerce/tests
+(defpackage :extensible-optimizing-coerce/tests
   #-extensible-compound-types
-  (:use :cl :fiveam :trivial-coerce)
+  (:use :cl :fiveam :extensible-optimizing-coerce)
   #+extensible-compound-types
-  (:use :extensible-compound-types-cl :fiveam :trivial-coerce)
-  (:shadowing-import-from :trivial-coerce :coerce))
+  (:use :extensible-compound-types-cl :fiveam :extensible-optimizing-coerce)
+  (:shadowing-import-from :extensible-optimizing-coerce :coerce))
 
-(in-package :trivial-coerce/tests)
+(in-package :extensible-optimizing-coerce/tests)
 
-(def-suite :trivial-coerce)
-(in-suite :trivial-coerce)
+(def-suite :extensible-optimizing-coerce)
+(in-suite :extensible-optimizing-coerce)
 
 (def-test sequences ()
   (is (equalp '(1 2 3) (coerce #(1 2 3) 'list)))

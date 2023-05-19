@@ -1,4 +1,4 @@
-(in-package :trivial-coerce)
+(in-package :extensible-optimizing-coerce)
 
 (define-coercion (object :from t :to t) () object)
 
@@ -89,7 +89,7 @@
   (cl:coerce n 'single-float))
 
 #-(or ccl sbcl)
-(warn "TRIVIAL-COERCE:COERCE fo FIXNUM is untested on non-SBCL/CCL platforms")
+(warn "EXTENSIBLE-OPTIMIZING-COERCE:COERCE fo FIXNUM is untested on non-SBCL/CCL platforms")
 (define-coercion (int :from integer :to fixnum) ()
   (let* ((fixnum-range (1+ (- most-positive-fixnum most-negative-fixnum)))
          (uint (mod int fixnum-range)))
