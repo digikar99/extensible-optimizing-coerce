@@ -1,11 +1,9 @@
- 
 (defsystem "trivial-coerce"
   :licence "MIT"
   :author "Shubhamkar Ayare (shubhamayare@yahoo.co.in)"
   :description "`trivial-coerce` primarily provides a `trivial-coerce:coerce` function intended as an extensible alternative to `cl:coerce`."
   :depends-on ("trivial-types"
                "closer-mop"
-               "ctype"
                "optima"
                "extensible-compound-types"
                "extensible-compound-types-interfaces")

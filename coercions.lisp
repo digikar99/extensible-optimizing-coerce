@@ -24,10 +24,8 @@
   (cl:coerce number `(complex ,type)))
 
 (macrolet ((def-stub (type)
-             (if (assoc type ctype::+floats+)
-                 `(define-coercion (number :from real :to ,type) ()
-                    (cl:coerce number ',type))
-                 nil)))
+             `(define-coercion (number :from real :to ,type) ()
+                (cl:coerce number ',type))))
   (def-stub double-float)
   (def-stub single-float)
   (def-stub short-float)
