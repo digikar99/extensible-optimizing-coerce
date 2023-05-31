@@ -1,1 +1,1 @@
-(:git "https://github.com/digikar99/extensible-compound-types")
+("extensible-compound-types" :git "https://github.com/digikar99/extensible-compound-types")
